@@ -24,8 +24,20 @@ let persons = [
   },
 ];
 
+// let info = `
+// <p>Phone book has info for ${persons.length} people</p>
+// <p>${new Date()}</p>
+// `
+
 app.get("/", (request, response) => {
-  response.send("<h1>Wasssuppp</h1>");
+  response.send("<h1>Hello World</h1>");
+});
+
+app.get("/info", (request, response) => {
+  response.send(`
+  <p>Phone book has info for ${persons.length} people</p>
+  <p>${new Date()}</p>
+  `);
 });
 
 app.get("/api/persons", (request, response) => {
