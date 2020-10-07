@@ -1,6 +1,7 @@
-const e = require("express");
 const express = require("express");
 const app = express();
+
+app.use(express.json());
 
 let persons = [
   {
@@ -51,10 +52,52 @@ app.get("/api/persons/:id", (request, response) => {
 });
 
 app.delete("/api/persons/:id", (request, response) => {
-    const id = Number(request.params.id);
-    persons = persons.filter(person => person.id !== id);
-    response.status(204).end();
-})
+  const id = Number(request.params.id);
+  persons = persons.filter((person) => person.id !== id);
+  response.status(204).end();
+});
+
+const generateId = () => {
+  let id = Math.floor(Math.random() * 100) + 1;
+  while (persons.find((x) => x.id === id)) {
+    id = Math.floor(Math.random() * 100) + 1;
+  }
+  return id;
+};
+
+app.post("/api/persons", (request, response) => {
+  const body = request.body;
+
+  if (!body.name) {
+    return response.status(400).json({
+      error: "name missing",
+    });
+  }
+
+  if (persons.find(x => x.name.toUpperCase() === body.name.toUpperCase())) {
+    return response.status(400).json({
+      error: "name must be unique",
+    });
+  }
+
+  if (!body.number) {
+    return response.status(400).json({
+      error: "number missing",
+    });
+  }
+
+  const person = {
+    name: body.name,
+    number: body.number,
+    id: generateId(),
+  };
+
+  // console.log(person);
+
+  persons = persons.concat(person);
+
+  response.json(person);
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {
