@@ -1,7 +1,9 @@
 const express = require("express");
-const app = express();
+const morgan = require("morgan");
 
+const app = express();
 app.use(express.json());
+app.use(morgan('tiny'));
 
 let persons = [
   {
@@ -23,7 +25,7 @@ let persons = [
     name: "Mary Poppendieck",
     number: "39-23-6423122",
     id: 4,
-  },
+  }
 ];
 
 app.get("/", (request, response) => {
@@ -91,9 +93,7 @@ app.post("/api/persons", (request, response) => {
     number: body.number,
     id: generateId(),
   };
-
   // console.log(person);
-
   persons = persons.concat(person);
 
   response.json(person);
