@@ -17,31 +17,31 @@ morgan.token('data', (req, res) => {
     return
   }
 })
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
 // app.use(morgan('tiny'));
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'))
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1,
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2,
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3,
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4,
-  }
-];
+// let persons = [
+//   {
+//     name: "Arto Hellas",
+//     number: "040-123456",
+//     id: 1,
+//   },
+//   {
+//     name: "Ada Lovelace",
+//     number: "39-44-5323523",
+//     id: 2,
+//   },
+//   {
+//     name: "Dan Abramov",
+//     number: "12-43-234345",
+//     id: 3,
+//   },
+//   {
+//     name: "Mary Poppendieck",
+//     number: "39-23-6423122",
+//     id: 4,
+//   }
+// ];
 
 app.get("/", (request, response) => {
   response.send("<h1>Hello World</h1>");
@@ -49,7 +49,7 @@ app.get("/", (request, response) => {
 
 app.get("/info", (request, response) => {
   response.send(`
-  <p>Phone book has info for ${persons.length} people</p>
+  <p>Phone book has info for people</p>
   <p>${new Date()}</p>
   `);
 });
@@ -61,7 +61,7 @@ app.get("/api/persons", (request, response) => {
   })
 });
 
-app.get("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
   // const id = Number(request.params.id);
   // const person = persons.find((person) => person.id === id);
   // if (person) {
@@ -69,15 +69,26 @@ app.get("/api/persons/:id", (request, response) => {
   // } else {
   //   response.status(404).end();
   // }
-  Person.findById(request.params.id).then(person=> {
-    response.json(person)
+  Person.findById(request.params.id)
+    .then(person=> {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
   })
+    .catch(error => next(error))
 });
 
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  persons = persons.filter((person) => person.id !== id);
-  response.status(204).end();
+app.delete("/api/persons/:id", (request, response, next) => {
+  // const id = Number(request.params.id);
+  // persons = persons.filter((person) => person.id !== id);
+  // response.status(204).end();
+  Person.findByIdAndRemove(request.params.id)
+  .then(result => {
+    response.status(204).end()
+  })
+  .catch(error => next(error))
 });
 
 // const generateId = () => {
@@ -123,6 +134,38 @@ app.post("/api/persons", (request, response) => {
   })
 });
 
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  }
+  Person.findByIdAndUpdate(request.params.id, person, {new: true})
+  .then(updatedPerson => {
+    response.json(updatedPerson.toJSON())
+  })
+  .catch(error => next(error))
+})
+
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError'){
+    return response.status(400).send({error: 'malformatted id'})
+  }
+  next(error)
+}
+
+app.use(errorHandler)
+ 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
